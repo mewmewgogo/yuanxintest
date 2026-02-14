@@ -10,9 +10,14 @@ collections:
     label: "题库"
     folder: "content/quizzes"
     create: true
-    slug: "{{slug}}"
+    # 关键：文件名由你填的 slug 决定（避免中文导致微信链接截断）
+    slug: "{{fields.slug}}"
     extension: "txt"
     format: "yaml-frontmatter"
     fields:
-      - { label: "题库名称", name: "title", widget: "string" }
+      - { label: "题库名称（可中文）", name: "title", widget: "string" }
+      - label: "链接代号 slug（必须英文/拼音/数字/短横线）"
+        name: "slug"
+        widget: "string"
+        hint: "例：ch1-quiz / diyizhang-ceyan / midterm-2026-02。不要中文、不要空格。"
       - { label: "题库内容（按模板粘贴）", name: "body", widget: "text" }
