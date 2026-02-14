@@ -2,19 +2,24 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>题库后台</title>
 </head>
 <body>
-  <div style="font-family:system-ui; padding:16px">
-    <h3>题库后台加载中…</h3>
-    <p>如果一直停留在此页，通常是网络阻止了CDN脚本加载。请刷新或换网络再试。</p>
-  </div>
-
-  <!-- Netlify Identity（必须，用于登录） -->
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 
-  <!-- Decap CMS：用 jsDelivr（国内一般比 unpkg 稳） -->
+  <script>
+    if (window.netlifyIdentity) {
+      window.netlifyIdentity.on("init", user => {
+        if (!user) {
+          window.netlifyIdentity.on("login", () => {
+            document.location.href = "/admin/";
+          });
+        }
+      });
+    }
+  </script>
+
   <script src="https://cdn.jsdelivr.net/npm/decap-cms@3/dist/decap-cms.js"></script>
 </body>
 </html>
