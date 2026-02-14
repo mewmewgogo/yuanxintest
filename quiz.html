@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>在线测验</title>
+<style>
+body{font-family:system-ui;max-width:700px;margin:auto;padding:20px}
+.card{border:1px solid #ddd;border-radius:12px;padding:16px;margin-bottom:15px}
+button{display:block;width:100%;margin:8px 0;padding:10px;border-radius:8px;border:1px solid #ccc;background:#fff}
+.ok{color:green;font-weight:bold}
+.bad{color:red;font-weight:bold}
+</style>
+</head>
+<body>
+
+<div class="card">
+<h3 id="title">加载中...</h3>
+</div>
+
+<div id="quiz" style="display:none" class="card">
+<div>第 <span id="index"></span> / <span id="total"></span> 题</div>
+<h3 id="question"></h3>
+<div id="options"></div>
+<div id="feedback"></div>
+<button id="next" disabled>下一题</button>
+</div>
+
+<div id="done" style="display:none" class="card">
+<h2>完成！</h2>
+<div>得分：<span id="score"></span></div>
+</div>
+
+<script>
+const params=new URLSearchParams(location.search);
+const set=params.get("set")||"demo";
+const file=`./content/quizzes/${set}.txt`;
+
+let questions=[],current=0,score=0,locked=false;
+
+function parse(text){
+const blocks=text.split("\n---\n");
+return blocks.map(b=>{
+let lines=b.trim().split("\n");
+let q="",opts=[],ans="",exp="";
+lines.forEach(l=>{
+if(l.startsWith("Q:")) q=l.slice(2).trim();
+else if(/^[A-Z]\./.test(l)) opts.push(l);
+else if(l.startsWith("Answer:")) ans=l.split(":")[1].trim();
+else if(l.startsWith("Explain:")) exp=l.split(":")[1]?.trim()||"";
+});
+return{q,opts,ans,exp};
+}).filter(x=>x.q);
+}
+
+function render(){
+locked=false;
+document.getElementById("feedback").innerHTML="";
+document.getElementById("next").disabled=true;
+let item=questions[current];
+document.getElementById("index").innerText=current+1;
+document.getElementById("total").innerText=questions.length;
+document.getElementById("question").innerText=item.q;
+let optDiv=document.getElementById("options");
+optDiv.innerHTML="";
+item.opts.forEach(o=>{
+let b=document.createElement("button");
+b.innerText=o;
+b.onclick=()=>choose(o);
+optDiv.appendChild(b);
+});
+}
+
+function choose(opt){
+if(locked)return;
+locked=true;
+let item=questions[current];
+let pick=opt[0];
+let ok=pick===item.ans;
+if(ok)score++;
+document.getElementById("feedback").innerHTML=
+(ok?"<div class='ok'>正确</div>":"<div class='bad'>错误</div>")+
+"<div>正确答案："+item.ans+"</div>"+
+(item.exp?"<div>解析："+item.exp+"</div>":"");
+[...document.querySelectorAll("#options button")].forEach(b=>b.disabled=true);
+document.getElementById("next").disabled=false;
+}
+
+document.getElementById("next").onclick=()=>{
+if(current<questions.length-1){current++;render();}
+else{
+document.getElementById("quiz").style.display="none";
+document.getElementById("done").style.display="block";
+document.getElementById("score").innerText=score+" / "+questions.length;
+}
+};
+
+fetch(file).then(r=>r.text()).then(t=>{
+questions=parse(t);
+document.getElementById("title").innerText="题库："+set;
+document.getElementById("quiz").style.display="block";
+render();
+}).catch(()=>document.getElementById("title").innerText="加载失败");
+</script>
+
+</body>
+</html>
