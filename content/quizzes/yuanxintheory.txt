@@ -1,5 +1,6 @@
 ---
-title: yuanxintheory
+title: 原心4C洞察体系理论考试
+slug: 4ci
 ---
 Q: 原心咨询独创的“4C洞察体系”中，不包含以下哪一项？
 A. Company (企业洞察)
