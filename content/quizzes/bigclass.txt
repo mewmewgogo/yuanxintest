@@ -1,7 +1,8 @@
+
 ---
 title: 原心4CI大课自测题
-slug: bigclass
 ---
+
 Q: 原心咨询独创的“4C洞察体系”中，不包含以下哪一项？
 A. Company (企业洞察)
 B. Competitor (竞争洞察)
