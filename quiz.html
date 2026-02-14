@@ -4,71 +4,131 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>在线测验</title>
+
 <style>
-  body{
-    font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
-    max-width:720px;margin:auto;padding:18px;line-height:1.5
-  }
-  .card{
-    border:1px solid #ddd;border-radius:14px;padding:16px;margin-bottom:14px;background:#fff
-  }
-  .muted{color:#666;font-size:12px}
-  h2,h3{margin:8px 0}
+body{
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+  max-width:720px;margin:auto;padding:18px;line-height:1.5;
+  background:#f9fafb;
+}
 
-  /* 选项按钮（字体变小1号） */
-  button.opt{
-    display:block;width:100%;
-    margin:10px 0;padding:14px;
-    border-radius:12px;border:1px solid #ccc;background:#fff;
-    font-size:19px;            /* 原来更大，这里小1号 */
-    line-height:1.35;
-    cursor:pointer;
-  }
-  button.opt:disabled{opacity:.65;cursor:not-allowed}
+.card{
+  border:1px solid #e5e7eb;
+  border-radius:16px;
+  padding:18px;
+  margin-bottom:16px;
+  background:#fff;
+}
 
-  /* 下一题按钮 */
-  #next{
-    display:block;width:100%;
-    margin:10px 0 0;padding:14px;
-    border-radius:12px;border:1px solid #111827;
-    background:#111827;color:#fff;
-    font-size:18px;font-weight:900;
-    cursor:pointer;
-  }
-  #next:disabled{opacity:.6;cursor:not-allowed}
+.muted{color:#6b7280;font-size:12px}
+h2,h3{margin:8px 0}
 
-  /* 提前交卷按钮（红色） */
-  #submitEarly{
-    display:block;width:100%;
-    margin:10px 0 0;padding:14px;
-    border-radius:12px;border:1px solid #b00020;
-    background:#b00020;color:#fff;
-    font-size:18px;font-weight:900;
-    cursor:pointer;
-  }
+/* 选项按钮（字体小1号） */
+button.opt{
+  display:block;
+  width:100%;
+  margin:10px 0;
+  padding:14px;
+  border-radius:14px;
+  border:1px solid #d1d5db;
+  background:#fff;
+  font-size:19px; /* 比之前小一号 */
+  line-height:1.35;
+  cursor:pointer;
+  transition:all 0.15s ease;
+}
 
-  /* 再做一遍按钮 */
-  #retryBtn{
-    display:block;width:100%;
-    margin:12px 0 0;padding:14px;
-    border-radius:12px;border:1px solid #111827;
-    background:#111827;color:#fff;
-    font-size:18px;font-weight:900;
-    cursor:pointer;
-  }
+button.opt:hover{
+  background:#f3f4f6;
+}
 
-  .ok{color:#0a7a2f;font-weight:900}
-  .bad{color:#b00020;font-weight:900}
-  .answerLine{margin-top:6px;font-size:16px}
-  .explainLine{margin-top:6px;font-size:16px}
+button.opt:active{
+  transform:scale(0.97);
+}
+
+button.opt:disabled{
+  opacity:.65;
+  cursor:not-allowed;
+}
+
+/* 下一题 —— 绿色立体按钮 */
+#next{
+  display:block;
+  width:100%;
+  margin:12px 0 0;
+  padding:15px;
+  border-radius:16px;
+  border:none;
+  background:#16a34a;
+  color:#fff;
+  font-size:18px;
+  font-weight:900;
+  box-shadow:0 6px 14px rgba(22,163,74,0.35);
+  cursor:pointer;
+  transition:all 0.15s ease;
+}
+
+#next:hover{
+  background:#15803d;
+}
+
+#next:active{
+  transform:scale(0.97);
+}
+
+/* 提前交卷 —— 柔和红色 */
+#submitEarly{
+  display:block;
+  width:100%;
+  margin:12px 0 0;
+  padding:15px;
+  border-radius:16px;
+  border:none;
+  background:#fca5a5;
+  color:#7f1d1d;
+  font-size:18px;
+  font-weight:900;
+  box-shadow:0 6px 14px rgba(252,165,165,0.4);
+  cursor:pointer;
+  transition:all 0.15s ease;
+}
+
+#submitEarly:hover{
+  background:#f87171;
+  color:#fff;
+}
+
+#submitEarly:active{
+  transform:scale(0.97);
+}
+
+/* 再做一遍 */
+#retryBtn{
+  display:block;
+  width:100%;
+  margin:14px 0 0;
+  padding:15px;
+  border-radius:16px;
+  border:none;
+  background:#111827;
+  color:#fff;
+  font-size:18px;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.ok{color:#16a34a;font-weight:900}
+.bad{color:#dc2626;font-weight:900}
+.answerLine{margin-top:6px;font-size:16px}
+.explainLine{margin-top:6px;font-size:16px}
 </style>
 </head>
+
 <body>
 
 <div class="card">
   <div class="muted">题库：</div>
   <h3 id="title">加载中...</h3>
-  <!-- 不显示题库文件地址 -->
 </div>
 
 <div id="quiz" style="display:none" class="card">
@@ -91,194 +151,154 @@
 </div>
 
 <script>
-  // === 参数 ===
-  const params = new URLSearchParams(location.search);
-  const set = params.get("set") || "demo";
-  const file = `./content/quizzes/${set}.txt`;
+const params=new URLSearchParams(location.search);
+const set=params.get("set")||"demo";
+const file=`./content/quizzes/${set}.txt`;
 
-  // === 状态 ===
-  let questions = [];
-  let totalCount = 0;
-  let current = 0;
-  let correctCount = 0;
-  let locked = false;
+let questions=[];
+let totalCount=0;
+let current=0;
+let correctCount=0;
+let locked=false;
 
-  // === 工具：洗牌（随机打乱题目/选项）===
-  function shuffle(arr){
-    for(let i = arr.length - 1; i > 0; i--){
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
   }
+  return arr;
+}
 
-  // === 读取 frontmatter 里的 title，并返回 {title, bodyText} ===
-  function extractFrontmatter(text){
-    const t = text.trimStart();
-    if(!t.startsWith("---")) return { title: "", bodyText: text };
+function extractFrontmatter(text){
+  const t=text.trimStart();
+  if(!t.startsWith("---")) return {title:"",bodyText:text};
+  const end=t.indexOf("\n---",3);
+  if(end===-1) return {title:"",bodyText:text};
+  const fm=t.slice(3,end).trim();
+  const after=t.indexOf("\n",end+4);
+  const body=after===-1?"":t.slice(after+1);
 
-    const end = t.indexOf("\n---", 3);
-    if(end === -1) return { title: "", bodyText: text };
+  let title="";
+  fm.split("\n").forEach(line=>{
+    const m=line.match(/^title:\s*(.*)$/i);
+    if(m) title=m[1].replace(/^["']|["']$/g,"").trim();
+  });
 
-    const fmBlock = t.slice(3, end).trim(); // frontmatter 内容
-    const after = t.indexOf("\n", end + 4);
-    const bodyText = after === -1 ? "" : t.slice(after + 1);
+  return {title,bodyText:body};
+}
 
-    // 简单解析 title: xxx
-    let title = "";
-    for(const line of fmBlock.split("\n")){
-      const m = line.match(/^title:\s*(.*)\s*$/i);
-      if(m){
-        title = m[1].replace(/^["']|["']$/g, "").trim();
-        break;
-      }
-    }
-    return { title, bodyText };
-  }
+function parse(text){
+  const {title,bodyText}=extractFrontmatter(text);
+  const blocks=bodyText.split("\n---\n").map(x=>x.trim()).filter(Boolean);
 
-  // === 解析题库文本 ===
-  function parse(text){
-    const { title, bodyText } = extractFrontmatter(text);
-    const blocks = bodyText.split("\n---\n").map(x => x.trim()).filter(Boolean);
-
-    const parsed = blocks.map(b => {
-      const lines = b.split("\n").map(x => x.trim()).filter(Boolean);
-      let q = "", opts = [], ans = "", exp = "";
-
-      for(const l of lines){
-        if(l.startsWith("Q:")) q = l.slice(2).trim();
-        else if(/^[A-Z]\./.test(l)) opts.push(l);
-        else if(l.toLowerCase().startsWith("answer:")) ans = l.split(":").slice(1).join(":").trim().toUpperCase();
-        else if(l.toLowerCase().startsWith("explain:")) exp = l.split(":").slice(1).join(":").trim();
-      }
-
-      return { q, opts, ans, exp };
-    }).filter(x => x.q && x.opts.length >= 2 && x.ans);
-
-    shuffle(parsed); // 随机打乱题目顺序
-    return { title, questions: parsed };
-  }
-
-  function escapeHtml(s){
-    return s.replace(/[&<>"']/g, m => ({
-      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-    }[m]));
-  }
-
-  function render(){
-    locked = false;
-    document.getElementById("feedback").innerHTML = "";
-    document.getElementById("next").disabled = true;
-
-    const item = questions[current];
-    document.getElementById("index").innerText = current + 1;
-    document.getElementById("total").innerText = totalCount;
-    document.getElementById("question").innerText = item.q;
-
-    const opts = shuffle([...item.opts]); // 每题打乱选项
-
-    const optDiv = document.getElementById("options");
-    optDiv.innerHTML = "";
-    opts.forEach(o => {
-      const b = document.createElement("button");
-      b.className = "opt";
-      b.innerText = o;
-      b.onclick = () => choose(o);
-      optDiv.appendChild(b);
+  const parsed=blocks.map(b=>{
+    const lines=b.split("\n").map(x=>x.trim()).filter(Boolean);
+    let q="",opts=[],ans="",exp="";
+    lines.forEach(l=>{
+      if(l.startsWith("Q:")) q=l.slice(2).trim();
+      else if(/^[A-Z]\./.test(l)) opts.push(l);
+      else if(l.toLowerCase().startsWith("answer:")) ans=l.split(":")[1].trim().toUpperCase();
+      else if(l.toLowerCase().startsWith("explain:")) exp=l.split(":")[1]?.trim()||"";
     });
+    return {q,opts,ans,exp};
+  }).filter(x=>x.q&&x.opts.length>=2&&x.ans);
+
+  shuffle(parsed);
+  return {title,questions:parsed};
+}
+
+function render(){
+  locked=false;
+  document.getElementById("feedback").innerHTML="";
+  document.getElementById("next").disabled=true;
+
+  const item=questions[current];
+  document.getElementById("index").innerText=current+1;
+  document.getElementById("total").innerText=totalCount;
+  document.getElementById("question").innerText=item.q;
+
+  const opts=shuffle([...item.opts]);
+  const optDiv=document.getElementById("options");
+  optDiv.innerHTML="";
+  opts.forEach(o=>{
+    const b=document.createElement("button");
+    b.className="opt";
+    b.innerText=o;
+    b.onclick=()=>choose(o);
+    optDiv.appendChild(b);
+  });
+}
+
+function choose(opt){
+  if(locked) return;
+  locked=true;
+  const item=questions[current];
+  const pick=opt[0].toUpperCase();
+  const ok=pick===item.ans;
+  if(ok) correctCount++;
+
+  [...document.querySelectorAll("#options button")].forEach(b=>b.disabled=true);
+
+  document.getElementById("feedback").innerHTML=
+    (ok
+      ?"<div class='ok' style='font-size:24px'>✅ 正确</div>"
+      :"<div class='bad' style='font-size:24px'>❌ 错误</div>"
+    )+
+    `<div class='answerLine'>正确答案：${item.ans}</div>`+
+    (item.exp?`<div class='explainLine'>解析：${item.exp}</div>`:"");
+
+  document.getElementById("next").disabled=false;
+}
+
+function finishQuiz(){
+  document.getElementById("quiz").style.display="none";
+  document.getElementById("done").style.display="block";
+
+  const percent=Math.round((correctCount/totalCount)*100);
+  document.getElementById("score").innerText=`${percent} / 100`;
+
+  const msg=document.getElementById("resultMsg");
+  const retry=document.getElementById("retryBtn");
+
+  if(percent<80){
+    msg.innerText="❌ 考试不合格，请重做";
+    msg.style.color="#dc2626";
+    retry.style.display="block";
+  }else{
+    msg.innerText="✅ 考试合格";
+    msg.style.color="#16a34a";
+    retry.style.display="none";
   }
+}
 
-  function choose(opt){
-    if(locked) return;
-    locked = true;
-
-    const item = questions[current];
-    const pick = opt[0].toUpperCase();
-    const ok = (pick === item.ans);
-    if(ok) correctCount++;
-
-    // 禁用所有选项
-    [...document.querySelectorAll("#options button")].forEach(b => b.disabled = true);
-
-    // 更醒目的正确/错误（图标 + 大字号 + 加粗）
-    const fb = document.getElementById("feedback");
-    fb.innerHTML =
-      (ok
-        ? "<div class='ok' style='font-size:24px'>✅ 正确</div>"
-        : "<div class='bad' style='font-size:24px'>❌ 错误</div>"
-      ) +
-      `<div class="answerLine">正确答案：${item.ans}</div>` +
-      (item.exp ? `<div class="explainLine">解析：${escapeHtml(item.exp)}</div>` : "");
-
-    document.getElementById("next").disabled = false;
-  }
-
-  function finishQuiz(){
-    // 结算：按题库总题数计算百分制；未答视为0分（不计分）
-    document.getElementById("quiz").style.display = "none";
-    document.getElementById("done").style.display = "block";
-
-    const percent = Math.round((correctCount / totalCount) * 100);
-    document.getElementById("score").innerText = `${percent} / 100`;
-
-    const msg = document.getElementById("resultMsg");
-    const retry = document.getElementById("retryBtn");
-
-    if(percent < 80){
-      msg.innerText = "❌ 考试不合格，请重做";
-      msg.style.color = "#b00020";
-      retry.style.display = "block";
-    }else{
-      msg.innerText = "✅ 考试合格";
-      msg.style.color = "#0a7a2f";
-      retry.style.display = "none";
-    }
-  }
-
-  document.getElementById("next").onclick = () => {
-    if(current < questions.length - 1){
-      current++;
-      render();
-    }else{
-      finishQuiz();
-    }
-  };
-
-  // 提前交卷：直接结算（未答题不计分）
-  document.getElementById("submitEarly").onclick = () => {
+document.getElementById("next").onclick=()=>{
+  if(current<questions.length-1){
+    current++;
+    render();
+  }else{
     finishQuiz();
-  };
+  }
+};
 
-  // 再做一遍：刷新即可（会重新随机打乱题目/选项）
-  document.getElementById("retryBtn").onclick = () => {
-    location.reload();
-  };
+document.getElementById("submitEarly").onclick=()=>{
+  finishQuiz();
+};
 
-  // === 加载题库 ===
-  fetch(file, {cache:"no-store"})
-    .then(r => {
-      if(!r.ok) throw new Error("题库加载失败");
-      return r.text();
-    })
-    .then(t => {
-      const parsed = parse(t);
-      questions = parsed.questions;
-      totalCount = questions.length;
+document.getElementById("retryBtn").onclick=()=>{
+  location.reload();
+};
 
-      if(!questions.length) throw new Error("题库为空或格式不正确");
-
-      // 标题：优先用中文 title；没有则回退 slug
-      const displayTitle = parsed.title ? parsed.title : set;
-      document.getElementById("title").innerText = displayTitle;
-
-      document.getElementById("quiz").style.display = "block";
-      render();
-    })
-    .catch(err => {
-      document.getElementById("title").innerText = "加载失败";
-      // 不显示文件地址，只显示错误信息
-      document.getElementById("title").innerText = err.message || String(err);
-    });
+fetch(file,{cache:"no-store"})
+.then(r=>r.text())
+.then(t=>{
+  const parsed=parse(t);
+  questions=parsed.questions;
+  totalCount=questions.length;
+  const displayTitle=parsed.title?parsed.title:set;
+  document.getElementById("title").innerText=displayTitle;
+  document.getElementById("quiz").style.display="block";
+  render();
+});
 </script>
 
 </body>
