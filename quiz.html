@@ -5,102 +5,217 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>在线测验</title>
 <style>
-body{font-family:system-ui;max-width:700px;margin:auto;padding:20px}
-.card{border:1px solid #ddd;border-radius:12px;padding:16px;margin-bottom:15px}
-button{display:block;width:100%;margin:8px 0;padding:10px;border-radius:8px;border:1px solid #ccc;background:#fff}
-.ok{color:green;font-weight:bold}
-.bad{color:red;font-weight:bold}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;max-width:720px;margin:auto;padding:18px;line-height:1.5}
+  .card{border:1px solid #ddd;border-radius:14px;padding:16px;margin-bottom:14px;background:#fff}
+  .muted{color:#666;font-size:12px}
+  h2,h3{margin:8px 0}
+  button{
+    display:block;width:100%;
+    margin:10px 0;padding:14px;
+    border-radius:12px;border:1px solid #ccc;background:#fff;
+    font-size:20px;            /* 选项字号更大 */
+    line-height:1.35;
+    cursor:pointer;
+  }
+  button:disabled{opacity:.65;cursor:not-allowed}
+  #next{
+    font-size:18px;font-weight:800;
+    background:#111827;color:#fff;border-color:#111827;
+  }
+  #retryBtn{
+    font-size:18px;font-weight:800;
+    background:#111827;color:#fff;border-color:#111827;
+  }
+  .ok{color:#0a7a2f;font-weight:900}
+  .bad{color:#b00020;font-weight:900}
+  .answerLine{margin-top:6px;font-size:16px}
+  .explainLine{margin-top:6px;font-size:16px}
 </style>
 </head>
 <body>
 
 <div class="card">
-<h3 id="title">加载中...</h3>
+  <div class="muted">题库：</div>
+  <h3 id="title">加载中...</h3>
+  <div class="muted" id="meta"></div>
 </div>
 
 <div id="quiz" style="display:none" class="card">
-<div>第 <span id="index"></span> / <span id="total"></span> 题</div>
-<h3 id="question"></h3>
-<div id="options"></div>
-<div id="feedback"></div>
-<button id="next" disabled>下一题</button>
+  <div class="muted">第 <span id="index"></span> / <span id="total"></span> 题</div>
+  <h3 id="question"></h3>
+  <div id="options"></div>
+
+  <div id="feedback" style="margin-top:10px"></div>
+  <button id="next" disabled>下一题</button>
 </div>
 
 <div id="done" style="display:none" class="card">
-<h2>完成！</h2>
-<div>得分：<span id="score"></span></div>
+  <h2>完成！</h2>
+  <div style="font-size:18px;font-weight:800">总分：<span id="score"></span></div>
+  <div id="resultMsg" style="margin-top:10px;font-size:18px;font-weight:900"></div>
+  <button id="retryBtn" style="display:none;margin-top:12px">再做一遍</button>
+  <div class="muted" style="margin-top:10px">成绩只显示在你的设备上，不会提交给老师。</div>
 </div>
 
 <script>
-const params=new URLSearchParams(location.search);
-const set=params.get("set")||"demo";
-const file=`./content/quizzes/${set}.txt`;
+  // === 参数 ===
+  const params = new URLSearchParams(location.search);
+  const set = params.get("set") || "demo";
+  const file = `./content/quizzes/${set}.txt`;
+  document.getElementById("meta").innerText = `题库文件：${file}`;
 
-let questions=[],current=0,score=0,locked=false;
+  let questions = [];
+  let current = 0;
+  let score = 0;
+  let locked = false;
 
-function parse(text){
-const blocks=text.split("\n---\n");
-return blocks.map(b=>{
-let lines=b.trim().split("\n");
-let q="",opts=[],ans="",exp="";
-lines.forEach(l=>{
-if(l.startsWith("Q:")) q=l.slice(2).trim();
-else if(/^[A-Z]\./.test(l)) opts.push(l);
-else if(l.startsWith("Answer:")) ans=l.split(":")[1].trim();
-else if(l.startsWith("Explain:")) exp=l.split(":")[1]?.trim()||"";
-});
-return{q,opts,ans,exp};
-}).filter(x=>x.q);
-}
+  // === 工具：洗牌（随机打乱题目/选项）===
+  function shuffle(arr){
+    for(let i = arr.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
 
-function render(){
-locked=false;
-document.getElementById("feedback").innerHTML="";
-document.getElementById("next").disabled=true;
-let item=questions[current];
-document.getElementById("index").innerText=current+1;
-document.getElementById("total").innerText=questions.length;
-document.getElementById("question").innerText=item.q;
-let optDiv=document.getElementById("options");
-optDiv.innerHTML="";
-item.opts.forEach(o=>{
-let b=document.createElement("button");
-b.innerText=o;
-b.onclick=()=>choose(o);
-optDiv.appendChild(b);
-});
-}
+  // === 兼容 yaml-frontmatter：去掉开头的 --- ... --- ===
+  function stripFrontmatter(text){
+    const t = text.trimStart();
+    if(!t.startsWith("---")) return text;
+    const end = t.indexOf("\n---", 3);
+    if(end === -1) return text;
+    // 跳过第二个 --- 结束行
+    const after = t.indexOf("\n", end + 4);
+    return after === -1 ? "" : t.slice(after + 1);
+  }
 
-function choose(opt){
-if(locked)return;
-locked=true;
-let item=questions[current];
-let pick=opt[0];
-let ok=pick===item.ans;
-if(ok)score++;
-document.getElementById("feedback").innerHTML=
-(ok?"<div class='ok'>正确</div>":"<div class='bad'>错误</div>")+
-"<div>正确答案："+item.ans+"</div>"+
-(item.exp?"<div>解析："+item.exp+"</div>":"");
-[...document.querySelectorAll("#options button")].forEach(b=>b.disabled=true);
-document.getElementById("next").disabled=false;
-}
+  // === 解析题库文本 ===
+  function parse(text){
+    const clean = stripFrontmatter(text);
+    const blocks = clean.split("\n---\n").map(x => x.trim()).filter(Boolean);
 
-document.getElementById("next").onclick=()=>{
-if(current<questions.length-1){current++;render();}
-else{
-document.getElementById("quiz").style.display="none";
-document.getElementById("done").style.display="block";
-document.getElementById("score").innerText=score+" / "+questions.length;
-}
-};
+    const parsed = blocks.map(b => {
+      const lines = b.split("\n").map(x => x.trim()).filter(Boolean);
+      let q = "", opts = [], ans = "", exp = "";
 
-fetch(file).then(r=>r.text()).then(t=>{
-questions=parse(t);
-document.getElementById("title").innerText="题库："+set;
-document.getElementById("quiz").style.display="block";
-render();
-}).catch(()=>document.getElementById("title").innerText="加载失败");
+      for(const l of lines){
+        if(l.startsWith("Q:")) q = l.slice(2).trim();
+        else if(/^[A-Z]\./.test(l)) opts.push(l);
+        else if(l.toLowerCase().startsWith("answer:")) ans = l.split(":").slice(1).join(":").trim().toUpperCase();
+        else if(l.toLowerCase().startsWith("explain:")) exp = l.split(":").slice(1).join(":").trim();
+      }
+
+      return { q, opts, ans, exp };
+    }).filter(x => x.q && x.opts.length >= 2 && x.ans);
+
+    // 随机打乱题目顺序
+    shuffle(parsed);
+    return parsed;
+  }
+
+  function render(){
+    locked = false;
+    document.getElementById("feedback").innerHTML = "";
+    document.getElementById("next").disabled = true;
+
+    const item = questions[current];
+    document.getElementById("index").innerText = current + 1;
+    document.getElementById("total").innerText = questions.length;
+    document.getElementById("question").innerText = item.q;
+
+    // 每题随机打乱选项顺序（不影响答案判断，因为答案用字母比较）
+    const opts = shuffle([...item.opts]);
+
+    const optDiv = document.getElementById("options");
+    optDiv.innerHTML = "";
+    opts.forEach(o => {
+      const b = document.createElement("button");
+      b.innerText = o;
+      b.onclick = () => choose(o);
+      optDiv.appendChild(b);
+    });
+  }
+
+  function choose(opt){
+    if(locked) return;
+    locked = true;
+
+    const item = questions[current];
+    const pick = opt[0].toUpperCase();
+    const ok = (pick === item.ans);
+    if(ok) score++;
+
+    // 禁用所有选项
+    [...document.querySelectorAll("#options button")].forEach(b => b.disabled = true);
+
+    // 更醒目的正确/错误（图标 + 大字号 + 加粗）
+    const fb = document.getElementById("feedback");
+    fb.innerHTML =
+      (ok
+        ? "<div class='ok' style='font-size:24px'>✅ 正确</div>"
+        : "<div class='bad' style='font-size:24px'>❌ 错误</div>"
+      ) +
+      `<div class="answerLine">正确答案：${item.ans}</div>` +
+      (item.exp ? `<div class="explainLine">解析：${escapeHtml(item.exp)}</div>` : "");
+
+    document.getElementById("next").disabled = false;
+  }
+
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, m => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[m]));
+  }
+
+  document.getElementById("next").onclick = () => {
+    if(current < questions.length - 1){
+      current++;
+      render();
+    }else{
+      // 结算：100分制 + 不合格提示 + 再做一遍
+      document.getElementById("quiz").style.display = "none";
+      document.getElementById("done").style.display = "block";
+
+      const percent = Math.round((score / questions.length) * 100);
+      document.getElementById("score").innerText = `${percent} / 100`;
+
+      const msg = document.getElementById("resultMsg");
+      const retry = document.getElementById("retryBtn");
+
+      if(percent < 80){
+        msg.innerText = "❌ 考试不合格，请重做";
+        msg.style.color = "#b00020";
+        retry.style.display = "block";
+      }else{
+        msg.innerText = "✅ 考试合格";
+        msg.style.color = "#0a7a2f";
+        retry.style.display = "none";
+      }
+    }
+  };
+
+  // 再做一遍：保留 set 参数，刷新即可（会重新随机打乱题目/选项）
+  document.getElementById("retryBtn").onclick = () => {
+    location.reload();
+  };
+
+  // === 加载题库 ===
+  fetch(file, {cache:"no-store"})
+    .then(r => {
+      if(!r.ok) throw new Error("题库加载失败");
+      return r.text();
+    })
+    .then(t => {
+      questions = parse(t);
+      if(!questions.length) throw new Error("题库为空或格式不正确");
+      document.getElementById("title").innerText = `题库：${set}`;
+      document.getElementById("quiz").style.display = "block";
+      render();
+    })
+    .catch(err => {
+      document.getElementById("title").innerText = "加载失败";
+      document.getElementById("meta").innerText = err.message || String(err);
+    });
 </script>
 
 </body>
