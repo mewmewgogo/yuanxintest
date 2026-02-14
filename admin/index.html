@@ -2,24 +2,90 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>题库后台</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+    .previewCard{
+      border:1px solid #e5e7eb; border-radius:12px; padding:14px; margin:12px 0;
+      background:#fff;
+    }
+    .label{color:#6b7280;font-size:12px;margin-bottom:4px}
+    .value{font-size:14px;font-weight:700;word-break:break-all}
+    .btn{
+      display:inline-block; padding:8px 10px; border-radius:10px; border:1px solid #d1d5db;
+      background:#fff; cursor:pointer; margin-top:10px;
+    }
+    .hint{color:#6b7280;font-size:12px;margin-top:8px}
+    code{background:#f3f4f6;padding:2px 6px;border-radius:6px}
+    textarea{
+      width:100%; box-sizing:border-box; padding:10px; border-radius:10px; border:1px solid #d1d5db;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      font-size:12px;
+    }
+  </style>
 </head>
 <body>
+  <!-- Netlify Identity（用于邮箱密码登录） -->
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
-
   <script>
     if (window.netlifyIdentity) {
       window.netlifyIdentity.on("init", user => {
         if (!user) {
-          window.netlifyIdentity.on("login", () => {
-            document.location.href = "/admin/";
-          });
+          window.netlifyIdentity.on("login", () => document.location.href = "/admin/");
         }
       });
     }
   </script>
 
+  <!-- Decap CMS（jsDelivr 一般更稳） -->
   <script src="https://cdn.jsdelivr.net/npm/decap-cms@3/dist/decap-cms.js"></script>
+
+  <script>
+    // 右侧预览：自动生成考试链接 + 一键复制
+    const QuizPreview = createClass({
+      render() {
+        const entry = this.props.entry;
+        const title = entry.getIn(['data', 'title']) || '';
+        const slug  = entry.getIn(['data', 'slug'])  || '';
+        const origin = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : '';
+        const examUrl = slug ? `${origin}/quiz.html?set=${encodeURIComponent(slug)}` : '';
+
+        return h('div', {},
+          h('div', {className:'previewCard'},
+            h('div', {className:'label'}, '题库名称'),
+            h('div', {className:'value'}, title || '(未填写)'),
+          ),
+          h('div', {className:'previewCard'},
+            h('div', {className:'label'}, 'slug（文件名/链接代号）'),
+            h('div', {className:'value'}, slug || '(未填写)'),
+            h('div', {className:'hint'}, '建议：只用英文/拼音/数字/短横线，避免微信链接截断。')
+          ),
+          h('div', {className:'previewCard'},
+            h('div', {className:'label'}, '考试链接（发给学生）'),
+            h('div', {className:'value'}, examUrl || '(先填写 slug 才会生成链接)'),
+            examUrl ? h('button', {
+              className:'btn',
+              onClick: () => {
+                if (navigator.clipboard) {
+                  navigator.clipboard.writeText(examUrl);
+                  alert('已复制考试链接');
+                } else {
+                  alert('当前浏览器不支持自动复制，请手动复制。');
+                }
+              }
+            }, '复制链接') : null,
+            h('div', {className:'hint'}, '提示：发布后，把这个链接生成二维码发微信群即可。')
+          ),
+          h('div', {className:'previewCard'},
+            h('div', {className:'label'}, '题库内容预览（原文）'),
+            h('textarea', {rows: 12, readOnly: true, value: this.props.widgetFor('body') ? this.props.entry.getIn(['data','body']) || '' : ''})
+          )
+        );
+      }
+    });
+
+    CMS.registerPreviewTemplate("quizzes", QuizPreview);
+  </script>
 </body>
 </html>
