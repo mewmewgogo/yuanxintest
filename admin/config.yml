@@ -1,0 +1,19 @@
+backend:
+  name: github
+  repo: mewmewgogo/yuanxintest
+  branch: main
+
+media_folder: "content/uploads"
+public_folder: "/content/uploads"
+
+collections:
+  - name: "quizzes"
+    label: "题库"
+    folder: "content/quizzes"
+    create: true
+    slug: "{{slug}}"
+    extension: "txt"
+    format: "yaml-frontmatter"
+    fields:
+      - { label: "题库名称", name: "title", widget: "string" }
+      - { label: "题库内容（按模板粘贴）", name: "body", widget: "text" }
