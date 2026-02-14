@@ -7,7 +7,10 @@
 </head>
 <body>
 <script>
-location.href="./quiz.html"+location.search;
+if(!location.hash.includes("invite_token")){
+  location.href="./quiz.html"+location.search;
+}
 </script>
+
 </body>
 </html>
