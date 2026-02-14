@@ -5,27 +5,58 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>在线测验</title>
 <style>
-  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;max-width:720px;margin:auto;padding:18px;line-height:1.5}
-  .card{border:1px solid #ddd;border-radius:14px;padding:16px;margin-bottom:14px;background:#fff}
+  body{
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+    max-width:720px;margin:auto;padding:18px;line-height:1.5
+  }
+  .card{
+    border:1px solid #ddd;border-radius:14px;padding:16px;margin-bottom:14px;background:#fff
+  }
   .muted{color:#666;font-size:12px}
   h2,h3{margin:8px 0}
-  button{
+
+  /* 选项按钮（字体变小1号） */
+  button.opt{
     display:block;width:100%;
     margin:10px 0;padding:14px;
     border-radius:12px;border:1px solid #ccc;background:#fff;
-    font-size:20px;            /* 选项字号更大 */
+    font-size:19px;            /* 原来更大，这里小1号 */
     line-height:1.35;
     cursor:pointer;
   }
-  button:disabled{opacity:.65;cursor:not-allowed}
+  button.opt:disabled{opacity:.65;cursor:not-allowed}
+
+  /* 下一题按钮 */
   #next{
-    font-size:18px;font-weight:800;
-    background:#111827;color:#fff;border-color:#111827;
+    display:block;width:100%;
+    margin:10px 0 0;padding:14px;
+    border-radius:12px;border:1px solid #111827;
+    background:#111827;color:#fff;
+    font-size:18px;font-weight:900;
+    cursor:pointer;
   }
+  #next:disabled{opacity:.6;cursor:not-allowed}
+
+  /* 提前交卷按钮（红色） */
+  #submitEarly{
+    display:block;width:100%;
+    margin:10px 0 0;padding:14px;
+    border-radius:12px;border:1px solid #b00020;
+    background:#b00020;color:#fff;
+    font-size:18px;font-weight:900;
+    cursor:pointer;
+  }
+
+  /* 再做一遍按钮 */
   #retryBtn{
-    font-size:18px;font-weight:800;
-    background:#111827;color:#fff;border-color:#111827;
+    display:block;width:100%;
+    margin:12px 0 0;padding:14px;
+    border-radius:12px;border:1px solid #111827;
+    background:#111827;color:#fff;
+    font-size:18px;font-weight:900;
+    cursor:pointer;
   }
+
   .ok{color:#0a7a2f;font-weight:900}
   .bad{color:#b00020;font-weight:900}
   .answerLine{margin-top:6px;font-size:16px}
@@ -37,7 +68,7 @@
 <div class="card">
   <div class="muted">题库：</div>
   <h3 id="title">加载中...</h3>
-  <div class="muted" id="meta"></div>
+  <!-- 不显示题库文件地址 -->
 </div>
 
 <div id="quiz" style="display:none" class="card">
@@ -46,14 +77,16 @@
   <div id="options"></div>
 
   <div id="feedback" style="margin-top:10px"></div>
+
   <button id="next" disabled>下一题</button>
+  <button id="submitEarly">提前交卷</button>
 </div>
 
 <div id="done" style="display:none" class="card">
   <h2>完成！</h2>
-  <div style="font-size:18px;font-weight:800">总分：<span id="score"></span></div>
+  <div style="font-size:18px;font-weight:900">总分：<span id="score"></span></div>
   <div id="resultMsg" style="margin-top:10px;font-size:18px;font-weight:900"></div>
-  <button id="retryBtn" style="display:none;margin-top:12px">再做一遍</button>
+  <button id="retryBtn" style="display:none">再做一遍</button>
   <div class="muted" style="margin-top:10px">成绩只显示在你的设备上，不会提交给老师。</div>
 </div>
 
@@ -62,11 +95,12 @@
   const params = new URLSearchParams(location.search);
   const set = params.get("set") || "demo";
   const file = `./content/quizzes/${set}.txt`;
-  document.getElementById("meta").innerText = `题库文件：${file}`;
 
+  // === 状态 ===
   let questions = [];
+  let totalCount = 0;
   let current = 0;
-  let score = 0;
+  let correctCount = 0;
   let locked = false;
 
   // === 工具：洗牌（随机打乱题目/选项）===
@@ -78,21 +112,34 @@
     return arr;
   }
 
-  // === 兼容 yaml-frontmatter：去掉开头的 --- ... --- ===
-  function stripFrontmatter(text){
+  // === 读取 frontmatter 里的 title，并返回 {title, bodyText} ===
+  function extractFrontmatter(text){
     const t = text.trimStart();
-    if(!t.startsWith("---")) return text;
+    if(!t.startsWith("---")) return { title: "", bodyText: text };
+
     const end = t.indexOf("\n---", 3);
-    if(end === -1) return text;
-    // 跳过第二个 --- 结束行
+    if(end === -1) return { title: "", bodyText: text };
+
+    const fmBlock = t.slice(3, end).trim(); // frontmatter 内容
     const after = t.indexOf("\n", end + 4);
-    return after === -1 ? "" : t.slice(after + 1);
+    const bodyText = after === -1 ? "" : t.slice(after + 1);
+
+    // 简单解析 title: xxx
+    let title = "";
+    for(const line of fmBlock.split("\n")){
+      const m = line.match(/^title:\s*(.*)\s*$/i);
+      if(m){
+        title = m[1].replace(/^["']|["']$/g, "").trim();
+        break;
+      }
+    }
+    return { title, bodyText };
   }
 
   // === 解析题库文本 ===
   function parse(text){
-    const clean = stripFrontmatter(text);
-    const blocks = clean.split("\n---\n").map(x => x.trim()).filter(Boolean);
+    const { title, bodyText } = extractFrontmatter(text);
+    const blocks = bodyText.split("\n---\n").map(x => x.trim()).filter(Boolean);
 
     const parsed = blocks.map(b => {
       const lines = b.split("\n").map(x => x.trim()).filter(Boolean);
@@ -108,9 +155,14 @@
       return { q, opts, ans, exp };
     }).filter(x => x.q && x.opts.length >= 2 && x.ans);
 
-    // 随机打乱题目顺序
-    shuffle(parsed);
-    return parsed;
+    shuffle(parsed); // 随机打乱题目顺序
+    return { title, questions: parsed };
+  }
+
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, m => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[m]));
   }
 
   function render(){
@@ -120,16 +172,16 @@
 
     const item = questions[current];
     document.getElementById("index").innerText = current + 1;
-    document.getElementById("total").innerText = questions.length;
+    document.getElementById("total").innerText = totalCount;
     document.getElementById("question").innerText = item.q;
 
-    // 每题随机打乱选项顺序（不影响答案判断，因为答案用字母比较）
-    const opts = shuffle([...item.opts]);
+    const opts = shuffle([...item.opts]); // 每题打乱选项
 
     const optDiv = document.getElementById("options");
     optDiv.innerHTML = "";
     opts.forEach(o => {
       const b = document.createElement("button");
+      b.className = "opt";
       b.innerText = o;
       b.onclick = () => choose(o);
       optDiv.appendChild(b);
@@ -143,7 +195,7 @@
     const item = questions[current];
     const pick = opt[0].toUpperCase();
     const ok = (pick === item.ans);
-    if(ok) score++;
+    if(ok) correctCount++;
 
     // 禁用所有选项
     [...document.querySelectorAll("#options button")].forEach(b => b.disabled = true);
@@ -161,10 +213,26 @@
     document.getElementById("next").disabled = false;
   }
 
-  function escapeHtml(s){
-    return s.replace(/[&<>"']/g, m => ({
-      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-    }[m]));
+  function finishQuiz(){
+    // 结算：按题库总题数计算百分制；未答视为0分（不计分）
+    document.getElementById("quiz").style.display = "none";
+    document.getElementById("done").style.display = "block";
+
+    const percent = Math.round((correctCount / totalCount) * 100);
+    document.getElementById("score").innerText = `${percent} / 100`;
+
+    const msg = document.getElementById("resultMsg");
+    const retry = document.getElementById("retryBtn");
+
+    if(percent < 80){
+      msg.innerText = "❌ 考试不合格，请重做";
+      msg.style.color = "#b00020";
+      retry.style.display = "block";
+    }else{
+      msg.innerText = "✅ 考试合格";
+      msg.style.color = "#0a7a2f";
+      retry.style.display = "none";
+    }
   }
 
   document.getElementById("next").onclick = () => {
@@ -172,29 +240,16 @@
       current++;
       render();
     }else{
-      // 结算：100分制 + 不合格提示 + 再做一遍
-      document.getElementById("quiz").style.display = "none";
-      document.getElementById("done").style.display = "block";
-
-      const percent = Math.round((score / questions.length) * 100);
-      document.getElementById("score").innerText = `${percent} / 100`;
-
-      const msg = document.getElementById("resultMsg");
-      const retry = document.getElementById("retryBtn");
-
-      if(percent < 80){
-        msg.innerText = "❌ 考试不合格，请重做";
-        msg.style.color = "#b00020";
-        retry.style.display = "block";
-      }else{
-        msg.innerText = "✅ 考试合格";
-        msg.style.color = "#0a7a2f";
-        retry.style.display = "none";
-      }
+      finishQuiz();
     }
   };
 
-  // 再做一遍：保留 set 参数，刷新即可（会重新随机打乱题目/选项）
+  // 提前交卷：直接结算（未答题不计分）
+  document.getElementById("submitEarly").onclick = () => {
+    finishQuiz();
+  };
+
+  // 再做一遍：刷新即可（会重新随机打乱题目/选项）
   document.getElementById("retryBtn").onclick = () => {
     location.reload();
   };
@@ -206,15 +261,23 @@
       return r.text();
     })
     .then(t => {
-      questions = parse(t);
+      const parsed = parse(t);
+      questions = parsed.questions;
+      totalCount = questions.length;
+
       if(!questions.length) throw new Error("题库为空或格式不正确");
-      document.getElementById("title").innerText = `题库：${set}`;
+
+      // 标题：优先用中文 title；没有则回退 slug
+      const displayTitle = parsed.title ? parsed.title : set;
+      document.getElementById("title").innerText = displayTitle;
+
       document.getElementById("quiz").style.display = "block";
       render();
     })
     .catch(err => {
       document.getElementById("title").innerText = "加载失败";
-      document.getElementById("meta").innerText = err.message || String(err);
+      // 不显示文件地址，只显示错误信息
+      document.getElementById("title").innerText = err.message || String(err);
     });
 </script>
 
