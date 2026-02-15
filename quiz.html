@@ -7,120 +7,212 @@
 
 <style>
 body{
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
-  max-width:720px;margin:auto;padding:18px;line-height:1.5;
-  background:#f9fafb;
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  max-width:720px;
+  margin:auto;
+  padding:18px;
+  line-height:1.5;
+  background:#0f1117;
+  color:#e8eaf0;
 }
 
 .card{
-  border:1px solid #e5e7eb;
+  border:1px solid #2a3050;
   border-radius:16px;
-  padding:18px;
+  padding:20px;
   margin-bottom:16px;
-  background:#fff;
+  background:#181c27;
+  box-shadow:0 4px 12px rgba(0,0,0,0.3);
 }
 
-.muted{color:#6b7280;font-size:12px}
-h2,h3{margin:8px 0}
+.muted{
+  color:#8892b0;
+  font-size:12px;
+}
 
-/* 选项按钮（字体小1号） */
+h2,h3{
+  margin:8px 0;
+  color:#e8eaf0;
+}
+
+/* 选项按钮 */
 button.opt{
   display:block;
   width:100%;
   margin:10px 0;
-  padding:14px;
-  border-radius:14px;
-  border:1px solid #d1d5db;
-  background:#fff;
-  font-size:19px; /* 比之前小一号 */
-  line-height:1.35;
+  padding:16px;
+  border-radius:12px;
+  border:1.5px solid #2a3050;
+  background:#1e2436;
+  color:#e8eaf0;
+  font-size:17px;
+  line-height:1.4;
   cursor:pointer;
-  transition:all 0.15s ease;
+  transition:all 0.2s ease;
+  text-align:left;
 }
 
 button.opt:hover{
-  background:#f3f4f6;
+  border-color:#4f8ef7;
+  background:rgba(79,142,247,0.1);
+  transform:translateX(3px);
 }
 
 button.opt:active{
-  transform:scale(0.97);
+  transform:scale(0.98);
 }
 
 button.opt:disabled{
-  opacity:.65;
+  opacity:0.6;
   cursor:not-allowed;
 }
 
-/* 下一题 —— 绿色立体按钮 */
+/* 下一题 - 蓝色立体按钮 */
 #next{
   display:block;
   width:100%;
-  margin:12px 0 0;
-  padding:15px;
-  border-radius:16px;
+  margin:16px 0 0;
+  padding:16px;
+  border-radius:12px;
   border:none;
-  background:#16a34a;
+  background:#4f8ef7;
   color:#fff;
-  font-size:18px;
-  font-weight:900;
-  box-shadow:0 6px 14px rgba(22,163,74,0.35);
+  font-size:17px;
+  font-weight:700;
+  box-shadow:0 6px 16px rgba(79,142,247,0.4);
   cursor:pointer;
-  transition:all 0.15s ease;
+  transition:all 0.2s ease;
+  letter-spacing:0.5px;
 }
 
 #next:hover{
-  background:#15803d;
+  background:#3b7de8;
+  transform:translateY(-2px);
+  box-shadow:0 8px 20px rgba(79,142,247,0.5);
 }
 
 #next:active{
-  transform:scale(0.97);
+  transform:translateY(0);
 }
 
-/* 提前交卷 —— 柔和红色 */
+#next:disabled{
+  background:#2a3050;
+  color:#4a5580;
+  cursor:not-allowed;
+  box-shadow:none;
+}
+
+/* 提前交卷 - 柔和红色 */
 #submitEarly{
   display:block;
   width:100%;
   margin:12px 0 0;
-  padding:15px;
-  border-radius:16px;
-  border:none;
-  background:#fca5a5;
-  color:#7f1d1d;
-  font-size:18px;
-  font-weight:900;
-  box-shadow:0 6px 14px rgba(252,165,165,0.4);
+  padding:14px;
+  border-radius:12px;
+  border:1px solid #2a3050;
+  background:transparent;
+  color:#8892b0;
+  font-size:15px;
+  font-weight:600;
   cursor:pointer;
-  transition:all 0.15s ease;
+  transition:all 0.2s ease;
 }
 
 #submitEarly:hover{
-  background:#f87171;
-  color:#fff;
+  border-color:#f87171;
+  color:#f87171;
+  background:rgba(248,113,113,0.08);
 }
 
 #submitEarly:active{
-  transform:scale(0.97);
+  transform:scale(0.98);
 }
 
 /* 再做一遍 */
 #retryBtn{
   display:block;
   width:100%;
-  margin:14px 0 0;
-  padding:15px;
-  border-radius:16px;
+  margin:20px 0 0;
+  padding:16px;
+  border-radius:12px;
   border:none;
-  background:#111827;
+  background:#4f8ef7;
   color:#fff;
-  font-size:18px;
-  font-weight:900;
+  font-size:17px;
+  font-weight:700;
   cursor:pointer;
+  box-shadow:0 6px 16px rgba(79,142,247,0.4);
+  transition:all 0.2s ease;
 }
 
-.ok{color:#16a34a;font-weight:900}
-.bad{color:#dc2626;font-weight:900}
-.answerLine{margin-top:6px;font-size:16px}
-.explainLine{margin-top:6px;font-size:16px}
+#retryBtn:hover{
+  background:#3b7de8;
+  transform:translateY(-2px);
+}
+
+#retryBtn:active{
+  transform:translateY(0);
+}
+
+.ok{
+  color:#34d399;
+  font-weight:700;
+  font-size:20px;
+}
+
+.bad{
+  color:#f87171;
+  font-weight:700;
+  font-size:20px;
+}
+
+.answerLine{
+  margin-top:8px;
+  font-size:15px;
+  color:#8892b0;
+  padding:10px 14px;
+  background:rgba(79,142,247,0.08);
+  border-radius:8px;
+  border-left:3px solid #4f8ef7;
+}
+
+.explainLine{
+  margin-top:8px;
+  font-size:14px;
+  color:#8892b0;
+  padding:10px 14px;
+  background:rgba(138,146,176,0.05);
+  border-radius:8px;
+  line-height:1.6;
+}
+
+/* 成绩显示 */
+#done .card{
+  text-align:center;
+}
+
+#done h2{
+  font-size:24px;
+  margin-bottom:20px;
+  color:#e8eaf0;
+}
+
+#score{
+  font-size:48px;
+  font-weight:900;
+  background:linear-gradient(135deg,#4f8ef7,#34d399);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+
+#resultMsg{
+  margin-top:16px;
+  font-size:20px;
+  font-weight:700;
+  padding:12px;
+  border-radius:8px;
+}
 </style>
 </head>
 
@@ -144,10 +236,10 @@ button.opt:disabled{
 
 <div id="done" style="display:none" class="card">
   <h2>完成！</h2>
-  <div style="font-size:18px;font-weight:900">总分：<span id="score"></span></div>
-  <div id="resultMsg" style="margin-top:10px;font-size:18px;font-weight:900"></div>
+  <div style="font-size:18px;font-weight:700;margin-bottom:12px">总分：<span id="score"></span></div>
+  <div id="resultMsg"></div>
   <button id="retryBtn" style="display:none">再做一遍</button>
-  <div class="muted" style="margin-top:10px">成绩只显示在你的设备上，不会提交给老师。</div>
+  <div class="muted" style="margin-top:16px">成绩只显示在你的设备上，不会提交给老师。</div>
 </div>
 
 <script>
@@ -241,8 +333,8 @@ function choose(opt){
 
   document.getElementById("feedback").innerHTML=
     (ok
-      ?"<div class='ok' style='font-size:24px'>✅ 正确</div>"
-      :"<div class='bad' style='font-size:24px'>❌ 错误</div>"
+      ?"<div class='ok'>✅ 正确</div>"
+      :"<div class='bad'>❌ 错误</div>"
     )+
     `<div class='answerLine'>正确答案：${item.ans}</div>`+
     (item.exp?`<div class='explainLine'>解析：${item.exp}</div>`:"");
@@ -255,18 +347,20 @@ function finishQuiz(){
   document.getElementById("done").style.display="block";
 
   const percent=Math.round((correctCount/totalCount)*100);
-  document.getElementById("score").innerText=`${percent} / 100`;
+  document.getElementById("score").innerText=`${percent}`;
 
   const msg=document.getElementById("resultMsg");
   const retry=document.getElementById("retryBtn");
 
   if(percent<80){
     msg.innerText="❌ 考试不合格，请重做";
-    msg.style.color="#dc2626";
+    msg.style.color="#f87171";
+    msg.style.background="rgba(248,113,113,0.1)";
     retry.style.display="block";
   }else{
     msg.innerText="✅ 考试合格";
-    msg.style.color="#16a34a";
+    msg.style.color="#34d399";
+    msg.style.background="rgba(52,211,153,0.1)";
     retry.style.display="none";
   }
 }
